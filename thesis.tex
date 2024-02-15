@@ -173,12 +173,12 @@ label_format={\thesection.},
 \twocolumn[
 {\title コンパイラ学習者のためのYacc用言語サーバの開発\par}
 {\author {稲垣研究室} {石部 鳳空}\par}
-{\textbf{あらまし}\quad Yaccは大学のコンパイラの講義に採用されているパーサジェネレータである．
-現在Yaccコーディング時に使用できる静的解析に基づく支援ツールとしてVSCode拡張のものが存在するが，他の主要なエディタでは同等のコーディング支援機能は提供されていない．
+{\textbf{あらまし}\quad Yaccは大学のコンパイラの講義に採用されていたりコンパイラ開発者に使用されたりしているパーサジェネレータである．
+現在Yaccコーディング時に利用できる静的解析に基づく支援ツールとしてVSCode拡張のものが存在するが，他の主要なエディタでは同等のコーディング支援機能は提供されていない．
 そこで本研究では，LSPに則ったYaccの言語サーバを開発した．
-各エディタでYaccファイルを開いた時に，作成した言語サーバを実行するように設定したことで，異なるエディタで静的解析に基づくコーディング支援機能が容易に得られることが確認できた．
+各エディタでYaccファイルを開いた時に，作成した言語サーバを実行するようにしたことで，異なるエディタで静的解析に基づくコーディング支援機能が容易に得られることが確認できた．
 \par}
-{\textbf{キーワード}\quad Yacc, Bison, LSP, 言語サーバ, 静的解析
+{\textbf{キーワード}\quad Yacc，Bison，LSP，言語サーバ，静的解析
 \newline}]
 
 % 和文文字間隔の設定
@@ -190,26 +190,29 @@ label_format={\thesection.},
 
 % 本文 (基本的にはタイトルとこれ以降の部分の編集をする)
 \chapter{背景}
-\section{Yaccとは}
+\section{Yaccとは}\label{sec:yacc}
 
 Yaccは高専や大学のコンパイラの講義やコンパイラ開発者，研究者などに広く使用されている一般的なLALR(1)パーサジェネレータである．
 Yaccファイルには終端記号と非終端記号を定義し，それらを参照しながらBNFで構文規則と対応する意味動作を記述する．
 作成したファイルをYaccで処理すると，内部でオートマトン(実体としては構文解析表である)とスタックを生成し，構文解析関数がこれらを操作して構文解析を実行するため，ユーザはこの関数を呼び出すだけで構文解析が実行できる．\par
 コンパイラの授業の演習などでYaccを採用している事例として，豊田高専専攻科情報科学専攻の「コンパイラ」\cite{nittc_syllabus}や岡山大学工学部情報系学科「コンパイラ」\cite{okayama_syllabus}，電気通信大学情報理工学域「言語処理系論」\cite{uec_syllabus}などがある．
-またプリンストン大学のコンパイラの講義の教科書である『最新コンパイラ構成技法』\cite{tiger_book}では構文解析器を開発するためにML-Yacc(Yaccのstandard ML実装)を使用している．
-このような使用例から分かるように，Yaccは学生やコンパイラ学習者に記述されていることが分かる．\par
+また，プリンストン大学のコンパイラの講義の教科書である『最新コンパイラ構成技法』\cite{tiger_book}では構文解析器を開発するためにML-Yacc(Yaccのstandard ML実装)を使用している．
+このような使用例から分かるように，Yaccは学生やコンパイラ学習者に記述されていると言える．\par
 パーサジェネレータを使用する場面でのLex/Yaccアプローチ以外の主要な選択肢としてANTLRを用いることがある．
-多くの大学の講義でLex/Yaccアプローチを採用しているという事実があるが，実験の結果ANTLRを用いた方が学生の試験合格率や最終的な成績が高いことが示されている\cite{yaccvsantlr}．
+先行研究では，多くの大学の講義でLex/Yaccアプローチを採用しているという事実があるが，実験の結果，ANTLRを用いた方が学生の試験合格率や最終的な成績が高いことが示されている\cite{yaccvsantlr}．
+また，学生のアンケートでの意見によると，ANTLRはLex/Yaccよりもシンプルで直感的で保守性が高いと評価されている．
 つまり，この実験ではYaccが他のツールと比較してユーザにとって実装の難易度が高いことが示唆されている．
-また学生のアンケートでの意見によると，ANTLRはLex/Yaccよりもシンプルで直感的で保守性が高いと評価されている．
 
 \section{Yaccの周辺ツールの現状}\label{sec:yacc_tools}
 
 Yaccの周辺ツールについて，理解の補助のためのツールとしてLeon Aaron Kaplanによる"yaccviso — a tool for visualizing yacc grammars"\cite{yaccviso}や楠目勝利らによる「コンパイラにおける構文解析過程の視覚化」\cite{parserviso}が提案されている．
-これらのツールはYaccファイルに記述した文法を概観したり，Yaccが出力した構文解析器の動作を可視化したりする際に利用される．
+Leonが開発したyaccvisoは，Yaccファイルを入力し，終端記号と非終端記号の依存関係をグラフで表示するものであり，楠目らが開発したツールは，Bisonが生成した構文解析表のファイルとLALR(1)構文解析のログから，構文解析過程の動作アニメーションを生成するものである．
+ここでは先読み記号やスタックの状態，解析木，還元時に適用した生成規則を表示している．
+これと同様のアプローチで開発されたツールとして"Parser Visualizations for Developing Grammars with Yacc"\cite{parserviso2}がある．\par
 また，コーディング時の補助ツールとして，シンタックスハイライトを施すもの(vscode-yacc\cite{vscode-yacc})や静的解析を行うもの(Yash\cite{yash})が存在する．
 しかし，これらはVisual Studio Code (VSCode)拡張として提供されているソフトウェアであり，VimやEmacsなどの他の主要なエディタでは同等の支援機能が得られない．
 特に静的解析によるコーディング支援を提供するものはYashのみであるが，これは現時点(2024年2月8日時点)で73,000回以上インストールされており，Yaccコーディング時の静的解析による支援機能の提供への需要が存在することが分かる．
+また，\ref{sec:yacc}で示したように，Yaccに初めて触れる学生にとって，Yaccを用
 
 \begin{figure}[h]
 \centering{
@@ -218,16 +221,8 @@ Yaccの周辺ツールについて，理解の補助のためのツールとし�
 }
 \end{figure}
 
-\chapter{問題と解決法}\label{ch:probsolv}
-
-セクション\ref{sec:yacc_tools}で述べたように，現時点ではYaccコーディング時の静的解析によるコーディング支援機能の提供を行うソフトウェアはVSCode上でのみ動作し，他の主要なエディタでは同等の支援機能が得られない．\par
-そこで本研究では，現在多くの主要なプログラミング言語の実装が存在するLanguage Server Protocol (LSP)\cite{lsp}の仕様に則った言語サーバをYacc用に開発する．
-この言語サーバを利用することで，ユーザは使い慣れたエディタでコーディング支援機能を使うことができ，Yaccコーディング時の負担が軽減する．
-また，新しいエディタが現われた場合でも，エディタ開発者はLSPに則ってクライアントを開発するだけでYaccコーディング時の支援機能をユーザに提供することができる．\par
-なお，現在Yaccよりも一般に使用されているBison 3.8.1\cite{bison}の仕様を元に静的解析器を実装する．
-BisonはGNUによるYacc実装で，軽微な記述の差異や拡張された機能はあるが，基本的なファイル記述はYaccと同様であり，Yaccとの上位互換性のあるソフトウェアのため，便宜上Yaccと表現している．
-Bisonファイルの記述例を\ref{code:bison}に示す．
-Bisonファイルは基本的にプロローグ，Bison宣言，文法規則，エピローグの4つのセクションからなり，プロローグでは出力ファイルの最初に記述されるCコード，Bison宣言ではトークンの定義と優先順位や結合規則などの設定，文法規則では構文解析器が認識する文法規則，エピローグでは出力ファイルの最後に記述されるCコードが書かれる．
+\noindent{いて構文解析器を開発することは比較的難易度が高い作業である．}
+この先行研究では，YaccよりもANTLRを用いた方が良い結果を得られたことの理由として，ANTLRが提供するプライグインサポートとTestRigテストツールの存在について言及しており，Yaccの記述を困難にしている原因の一つにコーディング時に利用できるツールなどのサポート不足があると推測できる．
 
 \begin{lstlisting}[caption=Bisonの記述例,label=code:bison,language=c]
 %{
@@ -275,6 +270,23 @@ int main() {
 }
 \end{lstlisting}
 
+\chapter{問題と解決法}\label{ch:probsolv}
+
+セクション\ref{sec:yacc_tools}で述べたように，現時点ではYaccコーディング時の静的解析によるコーディング支援機能の提供を行うソフトウェアはVSCode上でのみ動作し，他の主要なエディタでは同等の支援機能が得られない．\par
+そこで本研究では，現在多くの主要なプログラミング言語の実装が存在するLanguage Server Protocol (LSP)\cite{lsp}の仕様に則った言語サーバをYacc用に開発する(\ref{fig:lsp})．
+この言語サーバを利用することで，ユーザは使い慣れたエディタでコーディング支援機能を使うことができ，Yaccコーディング時の負担が軽減する．
+また，新しいエディタが現われた場合でも，エディタ開発者はLSPに則ってクライアントを開発するだけでYaccコーディング時の支援機能をユーザに提供することができる．\par
+なお，現在Yaccよりも一般に使用されているBison 3.8.1\cite{bison}の仕様を元に静的解析器を実装する．
+BisonはGNUによるYacc実装で，軽微な記述の差異や拡張された機能はあるが，基本的なファイル記述はYaccと同様であり，Yaccとの上位互換性のあるソフトウェアのため，便宜上Yaccと表現している．
+Bisonファイルの記述例を\ref{code:bison}に示す．
+Bisonファイルは基本的にプロローグ，Bison宣言，文法規則，エピローグの4つのセクションからなり，プロローグでは出力ファイルの最初に記述されるCコード，Bison宣言ではトークンの定義と優先順位や結合規則などの設定，文法規則では構文解析器が認識する文法規則，エピローグでは出力ファイルの最後に記述されるCコードが書かれる．
+\newline
+
+\chapter{LSPとは}
+
+LSPは2016年にMicrosoftが発表したプロトコルで，エディタと言語サーバ間の通信方法を規定している(\ref{fig:lsp-languages-editors})．
+現在は多くの主要なプログラミング言語が公式，非公式を問わず言語サーバを持っており\cite{lsp_impl}，プログラミング言語のコーディング環境を整備する際に複数の拡張やプラグインをインストールする必要がないだけでなく，言語クライアントが存在するエディタならばどのエディタでも利用することができることが強みである．\par
+近年，GoやTypeScript, Rustといったプログラミング言語が注目を集め利用者が増えているが，エディタやIDEなどの開発者がそれぞれのプログラミング言語用に補完や定義ジャンプ，ホバー時のヒント表示などの多くの支援機能を追加するには多大な労力を要する．
 \begin{figure}[h]
 \centering{
 \includegraphics[width=0.9\linewidth]{img/lsp-languages-editors.png}
@@ -282,12 +294,7 @@ int main() {
 }
 \end{figure}
 
-\chapter{LSPとは}
-
-LSPは2016年にMicrosoftが発表したプロトコルで，エディタと言語サーバ間の通信方法を規定している(\ref{fig:lsp-languages-editors})．
-現在は多くの主要なプログラミング言語が公式，非公式を問わず言語サーバを持っており\cite{lsp_impl}，プログラミング言語のコーディング環境を整備する際に複数の拡張やプラグインをインストールする必要がないだけでなく，言語クライアントが存在するエディタならばどのエディタでも利用することができることが強みである．\par
-近年，GoやTypeScript, Rustといった新しいプログラミング言語が注目を集め利用者が増えているが，エディタやIDEなどの開発者がそれぞれのプログラミング言語用に補完や定義ジャンプ，ホバー時のヒント表示などの多くの支援機能を追加するには多大な労力を要する．
-従来は開発ツール毎に支援機能を開発する必要があり，M個の言語に対してN個のエディタが存在し，その実装の数はM\times Nであった．
+\noindent{従来は開発ツール毎に支援機能を開発する必要があり，M個の言語に対してN個のエディタが存在し，その実装の数はM\times Nであった．}
 しかしLSPの登場により，M個の言語サーバとN個のクライアントのみで同様の機能が実現できるようになり，実装の数はM+Nとなった．
 このようなことから，LSPは言語のユーザとエディタ開発者双方の負担を軽減することができると言える．
 また，LSPを用いることで言語の静的解析器を一度実装すれば良いため，新しい言語を異なるエディタに素早く取り込めたり，特定のエディタの拡張やプラグインを大量に記述する必要がないため，言語の普及を早めたりする効果が期待できる．
@@ -299,12 +306,30 @@ LSPは2016年にMicrosoftが発表したプロトコルで，エディタと言�
 \section{開発概要}
 
 本研究ではYacc用言語サーバを開発と複数の言語クライアントの設定を行う．
-また言語サーバについて，LSPに則ってリクエストやレスポンスを処理したり，ドキュメントを読み書きしたりするサーバとしての機能だけでなく，静的解析に基づく支援機能をを提供するために静的解析器も実装する．
+また言語サーバについて，LSPに則ってリクエストやレスポンスを処理したり，ドキュメントを読み書きしたりするサーバとしての機能だけでなく，静的解析に基づく支援機能を提供するために静的解析器も実装する．
 つまり，開発は主に3つのプログラムからなり，それは言語サーバと言語クライアント，静的解析器である．\par
 \ref{tbl:dev}に開発環境を示す．
-主要なエディタはすでに言語クライアントが実装済みであり，開発者は設定ファイルへの追記のみで対応できることが多いが，VSCodeは言語クライアントのパッケージを用いて軽微な実装を行う必要があった．
-\ref{tbl:dev}中の言語クライアントはVSCodeの言語クライアントである．
-なお，今回開発したYacc言語サーバのソースコードは\url{https://github.com/is-hoku/yacc-language-server}で参照できる．
+言語サーバはOCamlで実装し，VSCodeの言語クライアントはTypeScriptで実装する．
+主要なエディタではすでに言語クライアントが実装済みであり，開発者はパッケージの利用と設定ファイルへの追記のみで対応できることが多いが，VSCodeは言語クライアントのパッケージを用いて軽微な実装を行う必要があった．
+\ref{tbl:dev}中の言語クライアントはVSCodeの言語クライアントを指している．
+なお，今回開発したYacc言語サーバのソースコードは\url{https://github.com/is-hoku/yacc-language-server}から参照できる．
+
+\section{言語クライアントの実装・設定}\label{sec:client}
+
+VSCodeで動作する言語クライアントをVSCode拡張として実装した．そこではMicrosoftが開発しているvscode-languageclientというnpmパッケージを使用し，VSCodeの拡張機能としての設定や言語サーバとの接続方法などの設定を記述した．
+また，VimとEmacsでも動作されるために，Yaccファイルを開いた状態で言語サーバと通信を行うように設定ファイルに記述を追加した．
+
+\section{言語サーバの通信}
+
+LSPではJSON-RPCを用いて通信をするが，通信方式は指定されていない．
+しかしLSPにおいては，同一のコンピュータでクライアントとサーバが動作することが通常であるため，今回は同一コンピュータ上で標準入出力による通信を確立することとした．
+実際にVSCodeの言語クライアントのパッケージでは標準入出力だけでなく，パイプ通信やソケット通信，IPC通信が選択できる．
+一方で，VimやEmacsの言語クライアントのプラグインの多くが標準入出力での通信のみをサポートしているという事実があり，これは標準入出力による通信がよく用いられることの証左であると言える．
+なお，言語サーバが適用できる状況を増やすために，ソケット通信でも通信を開始できるように実装した．
+実行時のコマンドライン引数で，標準入出力かソケット通信のどちらかの通信方式を指定するようにし，拡張性を高めた．
+LSPの仕様に則って，ドキュメント(ファイル)はクライアントではなくサーバ側のハッシュ表で管理することとした．
+ドキュメントが開かれると，クライアントはサーバにドキュメントの内容を含むドキュメント情報を送信する．
+このリクエストを処理する際に，サーバがドキュメント情報をハッシュ表に格納する．
 
 \begin{table}[h]
 	\caption{開発環境}\label{tbl:dev}
@@ -326,27 +351,7 @@ LSPは2016年にMicrosoftが発表したプロトコルで，エディタと言�
 	\end{tabularx}
 \end{table}
 
-\section{言語クライアントの実装・設定}
-
-VSCodeで動作する言語クライアントをVSCode拡張として実装した．そこではMicrosoftが開発しているvscode-languageclientというnpmパッケージを使用し，VSCodeの拡張機能としての設定や言語サーバとの接続方法などの設定を記述した．
-また，VimとEmacsでも動作されるために，Yaccファイルを開いた状態で言語サーバと通信を行うように設定ファイルに記述を追加した．
-
-\section{言語サーバの通信}
-
-LSPではJSON-RPCを用いて通信をするが，通信方式は指定されていない．
-しかしLSPにおいては，同一のコンピュータでクライアントとサーバが動作することが通常であるため，今回は同一コンピュータ上で標準入出力による通信を確立することとした．
-実際にVSCodeの言語クライアントのパッケージでは標準入出力だけでなく，パイプ通信やソケット通信，IPC通信が選択できるが，一方でVimやEmacsの言語クライアントのプラグインの多くが標準入出力での通信のみをサポートしているという事実があり，これは標準入出力による通信がよく用いられることの証左である．\par
-LSPの仕様に則って，ドキュメント(ファイル)はクライアントではなくサーバ側のハッシュ表で管理することとした．
-ドキュメントが開かれると，クライアントはサーバにドキュメントの内容を含むドキュメント情報を送信する．
-このリクエストを処理する際に，サーバがドキュメント情報をハッシュ表に格納する．
-これ以降のドキュメントの編集では，差分のみがサーバに送信されるため，差分をハッシュ表に格納されている情報に適用することで，サーバはクライアントが開いているドキュメントと同期するように実装した．
-
-\begin{figure}[h]
-\centering{
-\includegraphics[width=1\linewidth]{img/language_server_lifecycle.png}
-\caption{言語サーバのライフサイクル}\label{fig:language_server_lifecycle}
-}
-\end{figure}
+\noindent{これ以降のドキュメントの編集では，差分のみがサーバに送信されるため，差分をハッシュ表に格納されている情報に適用することで，サーバはクライアントが開いているドキュメントと同期するように実装した．}
 
 \section{言語サーバのライフサイクル}
 
@@ -361,53 +366,45 @@ requestはresponseを必要とし，notificationはresponseを必要としない
 これによって，双方はそれぞれが対応している支援機能などについて知ることができる．
 これが完了すると，サーバはクライアントから送信された補完や定義ジャンプなどの支援機能に関わるrequestを受理するようになる．\par
 今回はtextDocument/didSave notificationがクライアントから受信した時，サーバで静的解析を行い，その結果として得られた構文エラーなどの情報をtextDocument/publishDiagnostics notificationを用いてクライアントに送信するように実装した．
-現在，実装が完了し対応しているLSPメソッドとその役割について\ref{tbl:lsp_method}に示す．
+現在，実装が完了し対応しているLSPメソッドとその役割や実装上での動作について\ref{tbl:lsp_method}に示す．
 
 \begin{table*}[h]
-	\caption{実装済みのLSPメソッドとその役割}\label{tbl:lsp_method}
+	\caption{実装済みのLSPメソッド}\label{tbl:lsp_method}
 	\small
 	\centering
 	\begin{tabularx}{\linewidth}{|c|c|X|}
 		\hline
-		種類 & メソッド名& 役割 \\
+		種類 & メソッド名& 役割と実装上での動作 \\
 		\hline\hline
 		\multirow{2}{*}{request} & initialize & 初期化．クライアントのcapabilitiesをサーバで保持し，サーバのcapabilitiesを生成して返す． \\
 		& shutdown & サーバの状態を遷移させ，これ以降exit notification以外の要求を拒否するようにする． \\
 		\hline
 		\multirow{5}{*}{notification} & initialized & クライアントが初期化が完了したことの通知． \\
+		& exit & サーバプロセスを終了させる． \\
 		& textDocument/didOpen & ドキュメントが開かれたことの通知．ドキュメント情報をハッシュ表で保持する． \\
 		& textDocument/didChange & ドキュメントが変更されたことの通知．ドキュメントの変更をハッシュ表に反映させる． \\
 		& textDocument/didSave & ドキュメントの変更が保存されたことの通知．これをトリガーとして静的解析を行う． \\
 		& textDocument/publishDiagnostics & 静的解析によるコード診断結果の通知．サーバからクライアントに送信する． \\
-		& exit & サーバプロセスを終了させる． \\
 		\hline
 	\end{tabularx}
 \end{table*}
 
-\section{Yaccの静的解析器}
+\section{Yaccの静的解析器}\label{sec:analyzer}
 
 Bison実装の字句解析器と構文解析器の部分をocamllex, Menhirを用いてOCamlへの移植を行った．
 これによってBisonの仕様に則った字句解析器と構文解析器を得られた．
-また，構文解析の結果の出力として抽象構文木を得るように実装をすることで，静的解析が可能となった．\par
+また，構文解析の結果の出力として抽象構文木を得るように実装をすることで，静的解析が可能となった．
+静的解析の流れを\ref{fig:static_analysis}に示す.
+図中では今回実装した部分を青色の文字で表している．\par
 完全な入力を想定している通常のコンパイラと異なり，言語サーバは多くの場面で不完全なソースコードが入力として渡される．
 抽象構文木を走査して型検査や変数の定義と使用の検査などを行うため，どのような入力であっても構文木を得ることができなければ十分なコーディング支援を提供することが困難である．
-そのため，不完全な入力に対してエラー回復を行い抽象構文木を得る必要がある．
-エラー回復戦略としては，特殊なerror記号を使用した局所的なエラー回復や，Burke-Fisherエラー修復などが考えられるが，前者はエラー回復後の解析の精度に問題があり，後者は実装が複雑になることや，計算量が大きいこと，副作用のある意味動作においてエラー修復動作が予期しない影響を及ぼすという問題がある．
-まずerrorトークンを使用した局所的なエラー回復について考える．
-この方法では，終端記号とみなされるerrorトークンを含んだ生成規則を定義するだけで実現でき，実装にかかる労力は小さい．
-しかしこの方法でのLR構文解析器の動作が，errorトークンをシフトできる状態に達するまでスタックをポップし，その後errorトークンをシフトしてから，エラーでない動作を持つ先読みトークンまで必要ならば入力トークンを破棄して構文解析を再開するというものであり，エラー回復後の解析の精度に問題がある．
-例えば，適切にerrorトークンを含んだ生成規則を定義できなければ，エラー回復が別のエラーを引き起こしたり，スタックのポップによって意味動作が実行不能となったりすることが考えられる．
-次にBurke-Fisherエラー修復について考える．
-この手法はエラーに遭遇した時点のKトークン前から，それ以降に現れる全ての時点において，可能な1トークンの挿入もしくは除去，置換を全て試して修復をするものであり，errorトークンを用いた手法のように生成規則を変更したり，構文解析表が修正されたりすることが無い．
-しかし，これを実現するためにKトークン前のスタックの状態を保持する旧スタックが必要となり，N種類のトークンを持つ言語での最悪計算量はK+K\cdot N+K\cdot Nである．
-このようなことから，Burke-Fisherエラー修復は実装の労力と計算量が大きい点で不利であり，エラー修復中のシフトや還元動作で意味動作が何度も実行されることから，副作用を持つ意味動作を記述した場合に問題がある．\par
-Merlinの報告書\cite{merlin}によると，エラー回復の厳密さは解析対象の言語機能に依存するとされ，スコープ構造と前方参照を許す言語であるかどうかを考慮すべきだと述べられている．
-Yaccは高級なスコープ構造は持たないが，生成規則の記述中で前方参照を許しているため，厳密さを考えずにスタックをポップしたり入力トークンを破棄したりすると，意味解析段階で不都合が生じる可能性がある．
-そのため，前述したエラー回復手法では問題があり，より素朴なエラー回復，つまり正常に解析を続行できる状態になるまでダミートークンをシフトすることが求められた．
-そこで本研究ではMenhirのInspection APIを利用することとした．
-Inspection API はLR構文解析器のオートマトンやスタックの状態にアクセスすることができるため，比較的汎用なエラー回復が実現できる．\par
-静的解析の流れを\ref{fig:static_analysis}に示す.
-図中では今回実装した部分を青色の文字で表している．
+
+\begin{figure}[h]
+\centering{
+\includegraphics[width=1\linewidth]{img/language_server_lifecycle.png}
+\caption{言語サーバのライフサイクル}\label{fig:language_server_lifecycle}
+}
+\end{figure}
 
 \begin{figure}[h]
 \centering{
@@ -415,16 +412,6 @@ Inspection API はLR構文解析器のオートマトンやスタックの状態
 \caption{静的解析の流れ}\label{fig:static_analysis}
 }
 \end{figure}
-
-エラー回復戦略を説明する．
-エラーとなるトークンに遭遇したら，その時点のスタックに還元できる生成規則があれば還元を行い，そうでなければFIRST集合を計算してシフトできるトークンを取得し，ダミーの値を入れてシフトする．
-もしシフトできるトークンが一つも無ければ，スタックからトークンをポップし還元できる生成規則を探すところから再開する．\par
-ここで文法を\ref{fig:grammar}として，この戦略でのエラー回復の動作例を\ref{fig:error_recovery}に示す．
-入力として\texttt{\%token NUMBER \%}が与えられた時，\texttt{\%token NUMBER}までは通常の構文解析過程でスタックにシフトされるが，次の入力である\texttt{\%}は文法のどこにも出現しない文字であり入力が不正だと分かる．
-ここで構文解析器は解析を実行することができずエラー状態を報告し，これをエラー回復機構が受け取りエラー回復を試みる．
-まず還元できる生成規則を探すが，スタックには\texttt{percent\_symbol id}が積まれているため，\texttt{id}を\texttt{token\_decl}に還元できることが分かる．
-一度還元を実行すると，通常の構文解析過程に戻る．
-そこでは，もう不正な入力は無いため，生成規則に従って還元を順番に実行していき，最終的に\texttt{symbol\_declaration}を得ることができる．
 
 \begin{figure}[h]
 \centering{
@@ -441,14 +428,64 @@ Inspection API はLR構文解析器のオートマトンやスタックの状態
 }
 \end{figure}
 
-\ref{ch:probsolv}で示したようにYaccはセクション毎に記述が分かれており，セクションによって使用する文字や文字列が異なる．
+そのため，不完全な入力に対してエラー回復を行い抽象構文木を得る必要がある．
+エラー回復戦略としては，特殊なerror記号を使用した局所的なエラー回復や，Burke-Fisherエラー修復などが考えられるが，前者はエラー回復後の解析の精度に問題があり，後者は実装が複雑になることや，計算量が大きいこと，副作用のある意味動作においてエラー修復動作が予期しない影響を及ぼすという問題がある．
+まずerrorトークンを使用した局所的なエラー回復について考える．
+この方法では，終端記号とみなされるerrorトークンを含んだ生成規則を定義するだけで実現でき，実装にかかる労力は比較的小さい．
+しかしこの方法でのLR構文解析器の動作が，errorトークンをシフトできる状態に達するまでスタックをポップし，その後errorトークンをシフトしてから，エラーでない動作を持つ先読みトークンまで必要ならば入力トークンを破棄して構文解析を再開するというものであり，エラー回復後の解析の精度に問題がある．
+例えば，適切にerrorトークンを含んだ生成規則を定義できなければ，エラー回復が別のエラーを引き起こしたり，スタックのポップによって意味動作が実行不能となったりすることが考えられる．
+次にBurke-Fisherエラー修復について考える．
+この手法はエラーに遭遇した時点のKトークン前から，それ以降に現れる全ての時点において，可能な1トークンの挿入もしくは除去，置換を全て試して修復をするものであり，errorトークンを用いた手法のように生成規則を変更したり，構文解析表が修正されたりすることが無い．
+しかし，これを実現するためにKトークン前のスタックの状態を保持する旧スタックが必要となり，N種類のトークンを持つ言語で存在する可能な除去，挿入，置換の数はK+K\cdot N+K\cdot Nである．
+このようなことから，Burke-Fisherエラー修復は実装の労力と計算量が大きい点で不利であり，エラー修復中のシフトや還元動作で意味動作が何度も実行されることから，副作用を持つ意味動作を記述した場合に問題がある．\par
+Merlinの報告書\cite{merlin}によると，エラー回復の厳密さは解析対象の言語機能に依存するとされ，スコープ構造と前方参照を許す言語であるかどうかを考慮すべきだと述べられている．
+Yaccは高級なスコープ構造は持たないが，生成規則の記述中で前方参照を許しているため，厳密さを考えずにスタックをポップしたり入力トークンを破棄したりすると，意味解析段階で不都合が生じる可能性がある．
+そのため，前述したエラー回復手法では問題があり，より素朴なエラー回復，つまり正常に解析を続行できる状態になるまでダミートークンをシフトすることが求められた．
+そこで本研究ではMenhirのInspection APIを利用することとした．
+Inspection API はLR構文解析器のオートマトンやスタックの状態にアクセスすることができるため，比較的汎用なエラー回復が実現できる．
+これまで検討したエラー回復手法の比較を\ref{tbl:error_recovery}に示す．
+
+\begin{table*}[h]
+	\caption{エラー回復手法の比較}\label{tbl:error_recovery}
+	\centering
+	\begin{tabularx}{\linewidth}{|Y||c|c|c|c|}
+		\hline
+		エラー回復手法 & 実装コスト & カバーできる状況数 & 回復後の解析の安定性 & 回復に必要な除去，挿入，置換の回数 \\
+		\hline\hline
+		errorトークン & 小さい &  実装に依存 & 小さい & 最良で1(状況に依存) \\
+		\hline
+		Burke-Fisherエラー修復 & 大きい & 多い & 小さい & 最悪でK+K\cdot N+K\cdot N \\
+		\hline
+		Inspection API & 中程度 & 中程度 & 大きい & 最良で1(状況に依存) \\
+		\hline
+	\end{tabularx}
+\end{table*}
+
+エラー回復戦略を説明する．
+エラーとなるトークンに遭遇したら，その時点のスタックに還元できる生成規則があれば還元を行い，そうでなければFIRST集合を計算してシフトできるトークンを取得し，ダミーの値を入れてシフトする．
+もしシフトできるトークンが一つも無ければ，スタックからトークンをポップし還元できる生成規則を探すところから再開する．\par
+ここで文法を\ref{fig:grammar}として，この戦略でのエラー回復の動作例を\ref{fig:error_recovery}に示す．
+入力として\texttt{\%token NUMBER \%}が与えられた時，\texttt{\%token NUMBER}までは通常の構文解析過程でスタックにシフトされるが，次の入力である\texttt{\%}は文法のどこにも出現しない文字であり入力が不正だと分かる．
+ここで構文解析器は解析を実行することができずエラー状態を報告し，これをエラー回復機構が受け取りエラー回復を試みる．
+まず還元できる生成規則を探すが，スタックには\texttt{percent\_symbol id}が積まれているため，\texttt{id}を\texttt{token\_decl}に還元できることが分かる．
+一度還元を実行すると，通常の構文解析過程に戻る．
+そこでは，もう不正な入力は無いため，生成規則に従って還元を順番に実行していき，最終的に\texttt{symbol\_declaration}を得ることができる．
+チャプター\ref{ch:probsolv}で示したようにYaccはセクション毎に記述が分かれており，セクションによって使用する文字や文字列が異なる．
 このエラー回復戦略はヒューリスティックな解決法ではあるが，このようなセクション構造のために字句解析段階で一部の構文解析も行っているという事情により，良い結果が得られたと推察する．
 この戦略では不正な入力文字を破棄してしまう点や，エラーの発見が先延ばしになるような状況で最善の回復ができない点などで問題はあるものの，ユーザの入力途中の記述が渡されることが多いということから，他の方法に比べて有用であると考える．
 
 \chapter{実行例}
 
 コード診断をVSCode, Vim, Emacsで行っている様子をそれぞれ\ref{fig:vscode},\ref{fig:vim},\ref{fig:emacs}に示す．
-ここでは\texttt{\%}という入力が不正であることと，予期しない位置にEOFがあることを構文解析の過程で検出し，LSPのtextDocument/didSaveメソッドによってエディタに報告している．
+ここでは\texttt{\%}という入力が不正であることと，予期しない位置にEOFがあることを構文解析の過程で検出し，LSPのtextDocument/didSaveメソッドによってエディタに報告している．\par
+このコード診断の結果を得るまでの処理について説明する．
+まず，クライアントがサーバを起動し，標準入出力での通信を開始する．
+その後，initialization(初期化)のための通信が行われる．
+ここではクライアントとサーバそれぞれが対応している機能を通知し合う．
+次にエディタでYaccファイルが開かれると，textDocument/didOpenがクライアントから送信され，これをうけてサーバではドキュメント情報をハッシュ表で保持する．
+これ以降，エディタでドキュメントが編集される度に前回との入力の差分を持ったtextDocument/didChangeが送信され，これを受信したサーバは差分を保持しているドキュメント内容に反映させることによって，クライアントとの同期を取る(毎回ドキュメントの内容を全て送信するか，差分のみ送信するかはserver capabilitiesで制御できるが，今回はこのような実装とした)．
+エディタでドキュメントの変更内容が保存されると，textDocument/didSaveが送信され，これをうけてサーバでは静的解析が実行される(静的解析は計算にかかるコストが比較的高いため，どのタイミングで実行するかは議論の余地がある．また，解析結果のキャッシュとして保持したり，変更箇所のみ解析を実行したりなどの改善が考えられる)．
+そこで得た構文エラーなどの情報をtextDocument/publishDiagnosticsでクライアントに通知することで，エディタの画面上にエラー内容が表示される．
 
 \begin{figure}[h]
 \centering{
@@ -473,15 +510,30 @@ Inspection API はLR構文解析器のオートマトンやスタックの状態
 
 VSCodeとVim, Emacsの言語クライアントを使用し，Yaccファイルが開かれた時に今回作成した言語サーバを実行するように設定したことで，異なるエディタで同様の支援機能が容易に得られることが確認できた．
 また，Bisonの仕様や実装を元に字句解析器と構文解析器を作成し，構文解析器の出力として抽象構文木を構築することで，静的解析を可能にした．
-今回は不完全な入力に対して可能な限りエラー回復を試みて抽象構文木を構築し，その過程で見つかった構文エラーなどをLSPのtextDocument/diagnosticメソッドによってクライアントに送信することで，開発した言語サーバが機能することを示した．
+今回は不完全な入力に対して可能な限りエラー回復を試みて抽象構文木を構築し，その過程で見つかった構文エラーなどをLSPのtextDocument/publishDiagnosticsメソッドによってクライアントに送信することで，開発した言語サーバが機能することを示した．\par
+セクション\ref{sec:client}で述べたように，各言語クライアントはすでに開発されており，それを用いて設定ファイルに記述を追加するだけであった．
+VSCodeの言語クライアントについては，パッケージを利用しながらTypeScriptでコードを書く必要があったが，この作業のコストは非常に小さい．
+このことから，今後新しいエディタが台頭したとしても，言語クライアントさえ実装されていれば，コストをほとんどかけることなくYacc記述時にコーディング支援機能が得られることが確認できた．\par
+また，言語サーバのアーキテクチャにレイヤードアーキテクチャを採用したこと，各レイヤーとメソッド毎に単体テストを記述したことで，拡張性と保守性が高いソフトウェアを開発することができた．
+統合テストについては，並列にモッククライアントを動作させ，サーバの起動からinitializationによるハンドシェイク，シャットダウンまでの動作を保証するものとした．
 \newline
 
 \chapter{今後の課題}
 
-今回記述したパーサジェネレータのファイルはBisonのものの移植のため，error記号によるエラー回復を前提としており，静的解析を行うことは想定されていない．
+今回記述したMenhirファイルはBisonの記述の移植のため，コンパイラでの動作を前提としており，静的解析を行うことは想定されていない．
 そのため，文法に対応する意味動作に副作用がある場合が多いが，エラー回復のパターンを増やしたり，より安全にエラー回復を行ったりするためには，意味動作を副作用の無いものに変更する必要がある．
-また，意味解析器を実装し，コード補完や定義ジャンプなどサポートする機能を増やして利便性を高めていく．
+また，エラー回復機構の改善について，入力文字を破棄せずにいくつかのトークンの挿入や除去を繰り返した後に再度シフトしたり，入力途中のトークンを推測して最適なトークンをシフトしたりなどの方法が考えられる．
+ユーザの入力のパターンとその中に現われる誤りのパターンは無数であることを考えると，すでに解析されたトークンとそこで生成された構文木の構造を壊すことなくエラー回復を行うためにヒューリスティックな解法に頼ることになり，全ての状況で最善の回復ができるアルゴリズムは存在しないと推測する．
+そのため，カバーできる状況数と処理の複雑さや構造を壊さないための安全性のトレードオフを考えながら，前述したような方法を追加してテストを実行する試みが要求される．
+さらに，意味解析器を実装し，コード補完や定義ジャンプなどサポートする機能を増やして利便性を高めていく．
 その後，支援機能に関する計算を並列化するなどして効率化を図りたい．\par
+セクション\ref{sec:analyzer}で示したように，Bisonの記述では生成規則の定義中に前方参照を許している．
+そのため，抽象構文木を走査する際にまず生成規則の左辺を記号表に追加して，後から右辺を検査するなどの工夫が必要となり，その実装のために今回の開発で書いた抽象構文木の修正が必要になる可能性がある．
+また，並列化について，クライアントが単一のエディタであり並列処理が行われないため，通信部は並列処理する必要はなく，サーバでの計算を並列に行う．
+計算の並列化を実現する際は，LSPの仕様に注意しなければならない．
+例えば，textDocument/didChange notificationでは変更\(c_1\),\(c_2\)がある時，状態\(S\)は\(c_1\)によって\(S'\)に遷移し，\(c_2\)によって\(S''\)に遷移する．
+ここで\(c_2\)は\(S'\)に対して適用されなければならない．
+他にもドキュメントに変更を加えるリクエストや，shutdownなどのサーバの状態を遷移させるリクエストは，並列に処理されるタスクの中でも処理の順番を慎重に考慮しなければいけない．\par
 このように問題を解決したり機能を追加したりすることで，言語サーバを十分実用に耐え得るものにしていき，ユーザの獲得や継続的な開発を実現したい．
 \newline
 
@@ -489,26 +541,31 @@ VSCodeとVim, Emacsの言語クライアントを使用し，Yaccファイルが
 
 本研究の遂行にあたり，指導教員として多大なご指導を賜りました稲垣宏教授(豊田工業高等専門学校 情報工学科)，ご多忙のなか相談に応じてくださりご助言を頂いた内山慎太郎氏(豊橋技術科学大学 大学院 工学研究科 情報・知能工学専攻 博士後期課程 応用数理ネットワーク研究室)に感謝申し上げます．
 \newline
+\newline
+\newline
+\newline
+\newline
 
 \begin{thebibliography}{99}
 \begin{spacing}{0}
-	\bibitem{nittc_syllabus}{高専Webシラバス, “コンパイラ”, \url{https://syllabus.kosen-k.go.jp/Pages/PublicSyllabus?school_id=23&department_id=25&subject_code=95018&year=2017&lang=ja}, 2023年10月18日閲覧}
-	\bibitem{okayama_syllabus}{Nobuya WATANABE, “コンパイラ（Compilers）”, \url{http://www.arc.cs.okayama-u.ac.jp/~nobuya/lecture/compiler/}, 2023年10月18日閲覧}
-	\bibitem{uec_syllabus}{電気通信大学 シラバスWeb公開システム, “シラバス参照”, \url{http://kyoumu.office.uec.ac.jp/syllabus/2023/31/31_21124118.html}, 2023年10月18日閲覧}
+	\bibitem{nittc_syllabus}{高専Webシラバス, “コンパイラ”, \url{https://syllabus.kosen-k.go.jp/Pages/PublicSyllabus?school_id=23&department_id=25&subject_code=95018&year=2017&lang=ja}, 2023年10月18日閲覧．}
+	\bibitem{okayama_syllabus}{Nobuya WATANABE, “コンパイラ（Compilers）”, \url{http://www.arc.cs.okayama-u.ac.jp/~nobuya/lecture/compiler/}, 2023年10月18日閲覧．}
+	\bibitem{uec_syllabus}{電気通信大学 シラバスWeb公開システム, “シラバス参照”, \url{http://kyoumu.office.uec.ac.jp/syllabus/2023/31/31_21124118.html}, 2023年10月18日閲覧．}
 	\bibitem{tiger_book}{Andrew W. Appel，Modern compiler implementation in ML，Cambridge University Press，New York, Cambridge，2008．(アンドリュー・W・エイペル 神林靖・滝本宗宏(訳), 最新コンパイラ構成技法, 翔泳社, 東京, 2020.)}
 	\bibitem{yaccvsantlr}{Francisco Ortin, Jose Quiroga, Oscar Rodriguez-Prieto, Miguel Garcia, "An empirical evaluation of Lex/Yacc and ANTLR parser generation tools", 2022.}
 	\bibitem{yaccviso}{Leon Aaron Kaplan, “yaccviso — a tool for visualizing yacc grammars”, 2006.}
 	\bibitem{parserviso}{楠目 勝利, 佐々 政孝. “コンパイラにおける構文解析過程の視覚化”, 全国大会講演論文集, 第55回, ソフトウェア科学・工学, pp448-449, 1997.}
-	\bibitem{vscode-yacc}{Visual Studio Marketplace, “VSCode-YACC”, \url{https://marketplace.visualstudio.com/items?itemName=carlubian.yacc}, 2023年10月19日閲覧}
-	\bibitem{yash}{Visual Studio Marketplace, “Yash”, \url{https://marketplace.visualstudio.com/items?itemName=daohong-emilio.yash}, 2024年2月8日閲覧}
-	\bibitem{lsp}{Official page for Language Server Protocol, “Language Server Protocol Specification - 3.17”, \url{https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/}, 2023年10月19日閲覧}
-	\bibitem{bison}{Bison 3.8.1, \url{https://www.gnu.org/software/bison/manual/bison.html}}
-	\bibitem{lsp_impl}{Official page for Language Server Protocol, “Implemantations”, \url{https://microsoft.github.io/language-server-protocol/implementors/servers/}, 2023年10月19日閲覧}
-	\bibitem{lsp_vscode}{Language Server Extension Guide | Visual Studio Code Extension API, \url{https://code.visualstudio.com/api/language-extensions/language-server-extension-guide}, 2024年2月8日閲覧}
+	\bibitem{parserviso2}{Mona E. Lovato and Michael F. Kleyn. 1995. Parser visualizations for developing grammars with yacc. SIGCSE Bull. 27, 1 (March 1995), 345–349. \url{https://doi.org/10.1145/199691.199855}.}
+	\bibitem{vscode-yacc}{Visual Studio Marketplace, “VSCode-YACC”, \url{https://marketplace.visualstudio.com/items?itemName=carlubian.yacc}, 2023年10月19日閲覧．}
+	\bibitem{yash}{Visual Studio Marketplace, “Yash”, \url{https://marketplace.visualstudio.com/items?itemName=daohong-emilio.yash}, 2024年2月8日閲覧．}
+	\bibitem{lsp}{Official page for Language Server Protocol, “Language Server Protocol Specification - 3.17”, \url{https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/}, 2023年10月19日閲覧．}
+	\bibitem{bison}{Bison 3.8.1, \url{https://www.gnu.org/software/bison/manual/bison.html}, 2024年1月15日閲覧．}
+	\bibitem{lsp_impl}{Official page for Language Server Protocol, “Implemantations”, \url{https://microsoft.github.io/language-server-protocol/implementors/servers/}, 2023年10月19日閲覧．}
+	\bibitem{lsp_vscode}{Language Server Extension Guide | Visual Studio Code Extension API, \url{https://code.visualstudio.com/api/language-extensions/language-server-extension-guide}, 2024年2月8日閲覧．}
 	\bibitem{decoupling}{Bünder, H. “Decoupling Language and Editor - The Impact of the Language Server Protocol on Textual Domain-Specific Languages.” International Conference on Model-Driven Engineering and Software Development, no.10.5220/0007556301290140, pp.129-140, Prague, Czech Republic, 2019.}
-	\bibitem{vscode-languageclient}{npm, “vscode-languageclient”, \url{https://www.npmjs.com/package/vscode-languageclient}, 2023年10月19日閲覧}
-	\bibitem{menhir}{Menhir Reference Manual (version 20231231), “Inspection API”, \url{https://gallium.inria.fr/~fpottier/menhir/manual.html#sec64}, 2024年1月28日閲覧}
-	\bibitem{merlin}{Frédéric Bour, Thomas Refis, and Gabriel Scherer. 2018. Merlin: a language server for OCaml (experience report). Proc. ACM Program. Lang. 2, ICFP, Article 103 (September 2018), 15 pages.}
+	\bibitem{vscode-languageclient}{npm, “vscode-languageclient”, \url{https://www.npmjs.com/package/vscode-languageclient}, 2023年10月19日閲覧．}
+	\bibitem{menhir}{Menhir Reference Manual (version 20231231), “Inspection API”, \url{https://gallium.inria.fr/~fpottier/menhir/manual.html#sec64}, 2024年1月28日閲覧．}
+	\bibitem{merlin}{Frédéric Bour, Thomas Refis, and Gabriel Scherer. 2018. Merlin: a language server for OCaml (experience report). Proc. ACM Program. Lang. 2, ICFP, Article 103 (September 2018), 15 pages, \url{https://doi.org/10.1145/3236798}.}
 \end{spacing}
 \end{thebibliography}
 
